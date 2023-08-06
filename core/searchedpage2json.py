@@ -14,7 +14,7 @@ from langchain.output_parsers import PydanticOutputParser
 
 
 class SearchedPage2Json:
-    async def load_with_playwright(url: str):
+    async def load_with_playwright(self, url: str):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
@@ -50,9 +50,11 @@ class SearchedPageList(BaseModel):
     pages: List[SearchedPage] = Field(description="searched result page list")
 
 if __name__ == "__main__":
-    # asyncio.run(load_with_playwright("https://www.google.com/search?q=精神現象学&oq=%E7%B2%BE%E7%A5%9E%E7%8F%BE%E8%B1%A1%E5%AD%A6&aqs=chrome..69i57.4398j0j1&sourceid=chrome&ie=UTF-8"))
+    
+    sp = SearchedPage2Json()
+    content = asyncio.run(sp.load_with_playwright("https://www.google.com/search?q=精神現象学&oq=%E7%B2%BE%E7%A5%9E%E7%8F%BE%E8%B1%A1%E5%AD%A6&aqs=chrome..69i57.4398j0j1&sourceid=chrome&ie=UTF-8"))
 
-    llm_query = "「Pyhton」とGoogle検索したときに返されそうな結果リストのダミー"
+    # llm_query = "「Pyhton」とGoogle検索したときに返されそうな結果リストのダミー"
 
     parser =  PydanticOutputParser(pydantic_object=SearchedPageList)
 
@@ -62,8 +64,11 @@ if __name__ == "__main__":
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
 
+    print(content)
+
     llm = ChatOpenAI(temperature=0)
-    _input = prompt.format_prompt(query=llm_query)
+    # _input = prompt.format_prompt(query=llm_query)
+    _input = prompt.format_prompt(query=content)
 
     output = llm(_input.to_messages())
     print(parser.parse(output.content))
